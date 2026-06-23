@@ -6,20 +6,9 @@ S3** (via [django-storages](https://github.com/jschneier/django-storages)).
 
 ## Install
 
-Not on PyPI yet — install from the git repo:
-
 ```bash
-# local filesystem only
-pip install "django-storage-thumbnails @ git+https://github.com/ayesha-waris/django-storage-thumbnails.git"
-
-# with S3 support
-pip install "django-storage-thumbnails[s3] @ git+https://github.com/ayesha-waris/django-storage-thumbnails.git"
-```
-
-For local development against a checkout, use an editable install:
-
-```bash
-pip install -e "/path/to/django-storage-thumbnails[s3]"
+pip install django-storage-thumbnails          # local filesystem
+pip install "django-storage-thumbnails[s3]"     # + S3 support
 ```
 
 ## Configure
