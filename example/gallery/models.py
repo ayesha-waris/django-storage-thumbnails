@@ -3,7 +3,7 @@ from django.db import models
 
 
 def thumbnail_storage():
-    """Resolve the async S3 storage from the STORAGES registry.
+    """Resolve the thumbnail-generating S3 storage from the STORAGES registry.
 
     Passed as a callable so settings are read lazily (and migrations stay
     stable across environments).

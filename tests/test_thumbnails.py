@@ -125,6 +125,16 @@ class ThumbnailFileSystemStorageTests(SimpleTestCase):
         with self.storage.open("cat_small.jpg") as fh:
             self.assertEqual(fh.read(), b"user owns this, not a thumbnail")
 
+    def test_file_under_thumbnail_prefix_is_not_re_thumbnailed(self):
+        # Saving a file already inside the thumbnail namespace must not spawn
+        # nested thumbnails-of-thumbnails.
+        self.storage.save(
+            "thumbnails/small/cat.jpg", ContentFile(make_image().read())
+        )
+        self.assertFalse(
+            self.storage.exists("thumbnails/small/thumbnails/small/cat.jpg")
+        )
+
     def test_max_pixels_skips_oversized_image(self):
         # Off by default; when set, an image above the cap is skipped entirely.
         with override_settings(THUMBNAIL_MAX_PIXELS=100):  # 10x10 = 100 ok, more not

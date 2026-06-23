@@ -145,6 +145,11 @@ and any per-size failure is logged and skipped without affecting the upload or
 the other sizes. Override `thumbnail_prefix` to change the namespace, or
 `get_thumbnail_name` / `store_thumbnail` to change naming or write behavior.
 
+Cleanup on `delete()` removes the thumbnails for the **current** `THUMBNAIL_SIZES`
+/ `thumbnail_prefix`. If you remove a size key or change the prefix later,
+thumbnails generated under the old config are not tracked and won't be cleaned
+up automatically — prune them out of band if needed.
+
 ## Running the tests
 
 ```bash

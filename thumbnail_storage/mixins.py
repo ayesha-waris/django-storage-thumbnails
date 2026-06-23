@@ -21,9 +21,10 @@ class ThumbnailMixin:
 
         THUMBNAIL_SIZES = {"small": (10, 10), "med": (20, 20)}
 
-    Saving ``photos/cat.jpg`` then also produces ``photos/cat_small.jpg`` and
-    ``photos/cat_med.jpg`` in the same backend. Retrieve their URLs with
-    :meth:`thumbnail_url` or :meth:`get_thumbnails`.
+    Saving ``photos/cat.jpg`` then also produces
+    ``thumbnails/small/photos/cat.jpg`` and ``thumbnails/med/photos/cat.jpg`` in
+    the same backend. Retrieve their URLs with :meth:`thumbnail_url` or
+    :meth:`get_thumbnails`.
 
     The naming and write steps are split into small overridable methods
     (:meth:`get_thumbnail_name`, :meth:`store_thumbnail`) so a project can layer
@@ -54,6 +55,19 @@ class ThumbnailMixin:
     def is_image(self, name):
         return utils.is_image(name)
 
+    def _under_thumbnail_prefix(self, name):
+        prefix = self.thumbnail_prefix
+        return bool(prefix) and name.lstrip("/").startswith(prefix.rstrip("/") + "/")
+
+    def _should_generate(self, name):
+        # Skip non-images and anything already inside the thumbnail namespace
+        # (prevents nested thumbnails-of-thumbnails).
+        return (
+            bool(self.thumbnail_sizes)
+            and self.is_image(name)
+            and not self._under_thumbnail_prefix(name)
+        )
+
     # -- write hook (overridable) ----------------------------------------
     def store_thumbnail(self, thumb_name, data):
         """Persist one thumbnail's bytes under the exact ``thumb_name``.
@@ -77,7 +91,7 @@ class ThumbnailMixin:
         # Save the original first; the backend may rename it on collision, so
         # use the returned name as the basis for the thumbnails.
         name = super()._save(name, content)
-        if self.thumbnail_sizes and self.is_image(name):
+        if self._should_generate(name):
             generate_thumbnails(
                 self,
                 name,
@@ -91,7 +105,7 @@ class ThumbnailMixin:
     def delete(self, name):
         """Delete ``name`` and clean up its thumbnails so they don't orphan."""
         super().delete(name)
-        if not self.is_image(name):
+        if not self.is_image(name) or self._under_thumbnail_prefix(name):
             return
         for key in self.thumbnail_sizes:
             thumb_name = self.get_thumbnail_name(name, key)
@@ -146,10 +160,19 @@ class AsyncThumbnailMixin(ThumbnailMixin):
         # Save the original WITHOUT generating thumbnails inline: skip
         # ThumbnailMixin._save and go straight to the backend's _save.
         name = super(ThumbnailMixin, self)._save(name, content)
-        if self.thumbnail_sizes and self.is_image(name):
+        if self._should_generate(name):
             from .tasks import enqueue_thumbnails
 
-            enqueue_thumbnails(self.storage_alias, name)
+            try:
+                enqueue_thumbnails(self.storage_alias, name)
+            except Exception:
+                # The original is already saved; a broker/enqueue failure must
+                # not fail the upload (matches the sync path's behavior).
+                logger.warning(
+                    "Failed to enqueue thumbnail generation for %r.",
+                    name,
+                    exc_info=True,
+                )
         return name
 
 

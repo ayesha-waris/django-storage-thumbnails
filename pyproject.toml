@@ -54,3 +54,4 @@ packages = ["thumbnail_storage"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
 testpaths = ["tests"]
+pythonpath = ["."]
