@@ -4,7 +4,7 @@ requires = ["setuptools>=61.2"]
 
 [project]
 name = "django-storage-thumbnails"
-version = "0.1.0"
+version = "0.1.1"
 description = "Automatic image thumbnail generation for Django storages (local & S3)."
 readme = "README.md"
 requires-python = ">=3.8"
